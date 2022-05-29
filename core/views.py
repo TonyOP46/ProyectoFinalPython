@@ -1,52 +1,45 @@
 from django.shortcuts import render
-from .permissions import IsOwnerReadOnly
-from .models import User
 from rest_framework import viewsets
-from .serializer import UserSerializer
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.contrib.auth.models import User
+
+from core.permissions import OnlyLibrarian
 # Create your views here.
+from .serializer import UserSerializer
 from rest_framework.decorators import action
-from Books.models import books
-from Books.serializer import BookSerializer
+from book.models import Book
+from book.serializer import BookSerializer
 from rest_framework.response import Response
 from rest_framework import status
-from library.models import RackItem
-from Books.models import books
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
-
-
-    def get_permissions(self):
-        if self.action == "create":
-            permission_classes = [AllowAny]
-        else:
-            permission_classes = [IsOwnerReadOnly]
-        return [permission() for permission in permission_classes]
+    #permission_classes = [OnlyLibrarian]
 
 
     @action(detail=True)
-    def my_books(self, request, pk=None):
-        queryset = books.objects.filter(
-            owner__id= pk
+    def my_rent_books(self, request, pk):
+        books = Book.objects.filter(
+            bookitem__rent=pk
         )
-        serializer = BookSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = BookSerializer(books, many=True)
+        try:
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_200_OK)
 
-    
+
     @action(detail=True)
-    def my_books_on_stand(self, request, pk=None):
-        queryset = RackItem.objects.filter(
-            Books__owner__id=pk
-        ).values_list("Books__id", flat=True)
-        book = books.objects.filter(
-            id__in=queryset
+    def my_reserve_books(self, request, pk):
+        books = Book.objects.filter(
+            bookitem__reserve=pk
         )
-        serializer = BookSerializer(book, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
+        serializer = BookSerializer(books, many=True)
+        try:
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_200_OK)
+        
 
 
 

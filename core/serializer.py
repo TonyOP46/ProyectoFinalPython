@@ -1,24 +1,14 @@
-from dataclasses import fields
-from rest_framework import serializers
-from core.models import User
+from django.contrib.auth.models import User
+from rest_framework.serializers import ModelSerializer
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(ModelSerializer):
     class Meta:
         model = User
-        fields =(
-            "email", "password", "first_name",
-            "last_name", "id", "date_joined",
-            "last_login" 
-        )
-        extra_kwargs ={
-            "password": {"write_only": True},
-            "id":{"read_only": True},
-            "date_joined": {"read_only": True},
-            "last_login": {"read_only": True}
+        fields = "__all__"
+        extra_kwargs ={'password': {'write_only': True},
+        'date_joined': {'read_only': True}, 
+        'last_login': {'read_only': True},
+        'groups': {'read_only': True},
+        'user_permissions':{'read_only': True},
+        'is_superuser': {'read_only': True}
         }
-
-    def create(self, validated_data):
-        user = User(**validated_data)
-        user.set_password(validated_data["password"])
-        user.save()
-        return user
